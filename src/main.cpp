@@ -1030,11 +1030,18 @@ void setup()
   ArduinoOTA.onStart([]() {
     busy = true;
     watchdogPaused = true; // the upload runs inside ArduinoOTA.handle()
+    eventAddf("ArduinoOTA: upload started"); // Update.begin() passed
   });
 
   ArduinoOTA.onError([](ota_error_t error) {
-    mqttSerial.print("Error on OTA - restarting");
-    restart_board("ArduinoOTA upload failed");
+    // Which step failed, and the updater's own reason, so a failed upload can be told apart in the restart cause
+    static const char *const steps[] = {"auth", "begin", "connect", "receive", "end"};
+    static char cause[96];
+    snprintf(cause, sizeof(cause), "ArduinoOTA upload failed (%s, %u/%u bytes: %s)",
+             (unsigned)error < 5 ? steps[error] : "?", (unsigned)Update.progress(), (unsigned)Update.size(),
+             Update.errorString());
+    mqttSerial.printf("Error on OTA - restarting: %s\n", cause);
+    restart_board(cause);
   });
 
   setupMqttClient(); // also points the log stream at <base>/log

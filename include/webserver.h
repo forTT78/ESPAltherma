@@ -876,7 +876,11 @@ void webBegin()
       // An upload cut off midway leaves the update running, and Update.begin() would refuse every new one until
       // a restart ("already running"): drop it.
       if (Update.isRunning())
+      {
+        eventAddf("Firmware update: the previous upload stopped at %u of %u bytes", (unsigned)Update.progress(),
+                  (unsigned)Update.size());
         Update.abort();
+      }
       updateFailed = false;
       updateDone = false;
       updateError[0] = 0;
